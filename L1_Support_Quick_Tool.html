@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>L1 Support Quick Tool</title>
+  <style>
+    /* ── Reset ──────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Base ───────────────────────────────────────── */
+    body {
+      font-family: "72", "72full", Arial, Helvetica, sans-serif;
+      font-size: 14px;
+      background: #f1f5f9;
+      color: #1e293b;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Shell Bar ──────────────────────────────────── */
+    .shellbar {
+      background: linear-gradient(135deg, #0c1a28 0%, #1a3347 60%, #1e3d55 100%);
+      height: 52px;
+      display: flex;
+      align-items: center;
+      padding: 0 1.5rem;
+      gap: 1rem;
+      flex-shrink: 0;
+      box-shadow: 0 2px 16px rgba(0,0,0,.32), 0 1px 0 rgba(255,255,255,.05) inset;
+    }
+
+    .shellbar-logo { height: 20px; width: auto; }
+
+    .shellbar-separator {
+      width: 1px;
+      height: 22px;
+      background: rgba(255,255,255,.15);
+    }
+
+    .shellbar-title {
+      color: white;
+      font-size: 0.9375rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+    }
+
+    .shellbar-badge {
+      margin-left: auto;
+      background: rgba(0,112,242,.25);
+      color: rgba(255,255,255,.85);
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.625rem;
+      border-radius: 20px;
+      border: 1px solid rgba(0,112,242,.45);
+    }
+
+    /* ── App Layout ─────────────────────────────────── */
+    .app-layout {
+      display: flex;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    /* ── Sidebar ─────────────────────────────────────── */
+    .sidebar {
+      width: 220px;
+      background: #0f172a;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 1.5rem 0;
+      border-right: 1px solid rgba(255,255,255,.04);
+    }
+
+    .sidebar-section-title {
+      font-size: 0.625rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.22);
+      padding: 0 1rem 0.75rem;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+      padding: 0.625rem 1rem;
+      margin: 0.125rem 0.625rem;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: rgba(255,255,255,.45);
+      font-size: 0.875rem;
+      font-family: inherit;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all .18s ease;
+      text-align: left;
+      width: calc(100% - 1.25rem);
+      position: relative;
+    }
+
+    .nav-item:hover {
+      background: rgba(255,255,255,.07);
+      color: rgba(255,255,255,.85);
+    }
+
+    .nav-item.active {
+      background: rgba(0,112,242,.2);
+      color: white;
+      font-weight: 600;
+    }
+
+    .nav-item.active::before {
+      content: '';
+      position: absolute;
+      left: -0.625rem;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 3px;
+      height: 60%;
+      background: #3b9cff;
+      border-radius: 0 3px 3px 0;
+    }
+
+    .nav-item svg { flex-shrink: 0; opacity: .55; }
+    .nav-item.active svg { opacity: 1; }
+
+    /* ── Main content area ───────────────────────────── */
+    .main-content {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2.5rem 1.5rem;
+      background: #f1f5f9;
+    }
+
+    /* ── Pages ───────────────────────────────────────── */
+    .page { display: none; width: 100%; max-width: 520px; }
+    .page.active { display: block; }
+
+    /* ── Contacts page ───────────────────────────────── */
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+    }
+
+    .page-title {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: #0f172a;
+      letter-spacing: -0.02em;
+    }
+
+    .btn-add {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0 1rem;
+      height: 36px;
+      background: linear-gradient(135deg, #0070f2 0%, #0055cc 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.8125rem;
+      font-family: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,112,242,.3);
+      transition: all .2s ease;
+    }
+    .btn-add:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,112,242,.42); background: linear-gradient(135deg, #0064d9 0%, #004ab8 100%); }
+
+    .add-form {
+      display: none;
+      background: white;
+      border: 1.5px solid #bfdbfe;
+      border-radius: 12px;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 0 0 4px rgba(0,112,242,.06), 0 4px 16px rgba(0,0,0,.06);
+      animation: previewIn .2s ease both;
+    }
+    .add-form.visible { display: block; }
+
+    .add-form-title {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: #475569;
+      margin-bottom: 0.875rem;
+    }
+
+    .add-form-row { display: flex; gap: 0.75rem; margin-bottom: 0.875rem; }
+    .add-form-row .field { flex: 1; }
+
+    .add-form-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
+
+    .btn-save {
+      padding: 0 1.125rem;
+      height: 34px;
+      background: #0070f2;
+      color: white;
+      border: none;
+      border-radius: 7px;
+      font-size: 0.8125rem;
+      font-family: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .btn-save:hover { background: #0062d9; }
+
+    .btn-cancel-form {
+      padding: 0 1.125rem;
+      height: 34px;
+      background: white;
+      color: #64748b;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 7px;
+      font-size: 0.8125rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .btn-cancel-form:hover { border-color: #94a3b8; color: #1e293b; }
+
+    .contacts-list { display: flex; flex-direction: column; gap: 0.5rem; }
+
+    .contact-item {
+      display: flex;
+      align-items: center;
+      background: white;
+      border: 1.5px solid #f1f5f9;
+      border-radius: 10px;
+      padding: 0.875rem 1rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,.04), 0 4px 12px rgba(0,0,0,.03);
+      transition: border-color .18s, box-shadow .18s, transform .18s;
+      animation: previewIn .2s ease both;
+    }
+    .contact-item:hover { border-color: #bfdbfe; box-shadow: 0 2px 12px rgba(0,112,242,.1); transform: translateY(-1px); }
+
+    .contact-info { flex: 1; min-width: 0; }
+    .contact-name { font-weight: 600; font-size: 0.875rem; color: #0f172a; }
+    .contact-gebiet {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      margin-top: 0.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .contact-tag {
+      display: inline-block;
+      background: #eff6ff;
+      color: #3b82f6;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      padding: 0.15rem 0.5rem;
+      border-radius: 20px;
+    }
+
+    .btn-delete {
+      width: 30px;
+      height: 30px;
+      border-radius: 7px;
+      border: 1.5px solid #fee2e2;
+      background: #fff5f5;
+      color: #ef4444;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-left: 0.75rem;
+      transition: all .18s;
+    }
+    .btn-delete:hover { background: #ef4444; color: white; border-color: #ef4444; transform: scale(1.08); }
+
+    .contacts-empty {
+      text-align: center;
+      padding: 3rem 1rem 2rem;
+      color: #94a3b8;
+    }
+    .contacts-empty svg { margin-bottom: 0.75rem; opacity: .3; }
+    .contacts-empty p { font-size: 0.875rem; }
+
+    /* ── Card ───────────────────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow:
+        0 0 0 1px rgba(15,23,42,.05),
+        0 4px 20px rgba(15,23,42,.08),
+        0 16px 48px rgba(15,23,42,.05);
+      width: 100%;
+      max-width: 520px;
+      overflow: hidden;
+      animation: fadeUp .4s cubic-bezier(.22,.68,0,1.2) both;
+    }
+
+    .card-accent {
+      height: 3px;
+      background: linear-gradient(90deg, #0070f2 0%, #60a5fa 60%, #3b9cff 100%);
+    }
+
+    .card-header {
+      padding: 1.75rem 2rem 1.375rem;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .card-header h1 {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: #0f172a;
+      letter-spacing: -0.02em;
+    }
+
+    .card-header p {
+      margin-top: 0.35rem;
+      font-size: 0.8125rem;
+      color: #94a3b8;
+      line-height: 1.5;
+    }
+
+    .card-body {
+      padding: 1.75rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* ── Section label ───────────────────────────────── */
+    .section-label {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #94a3b8;
+      margin-bottom: -0.375rem;
+    }
+
+    /* ── Form fields ─────────────────────────────────── */
+    .field label {
+      display: block;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: #475569;
+      margin-bottom: 0.4rem;
+    }
+
+    .field label .req { color: #ef4444; margin-left: 2px; }
+
+    .field input,
+    .field select {
+      width: 100%;
+      height: 40px;
+      padding: 0 0.875rem;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-family: inherit;
+      color: #0f172a;
+      background: #f8fafc;
+      outline: none;
+      transition: border-color .18s, box-shadow .18s, background .18s;
+    }
+
+    .field input::placeholder { color: #cbd5e1; }
+
+    .field input:hover,
+    .field select:hover { border-color: #94a3b8; background: #fff; }
+
+    .field input:focus,
+    .field select:focus {
+      border-color: #0070f2;
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(0,112,242,.1);
+    }
+
+    .field .error-msg {
+      display: none;
+      font-size: 0.75rem;
+      color: #ef4444;
+      margin-top: 0.3rem;
+    }
+
+    .field.has-error .error-msg { display: block; }
+    .field.has-error input,
+    .field.has-error select {
+      border-color: #ef4444;
+      box-shadow: 0 0 0 3px rgba(239,68,68,.08);
+    }
+
+    .field-row { display: flex; gap: 0.75rem; }
+    .field-row .field { flex: 1; }
+
+    .field select {
+      appearance: none;
+      cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%2364748b' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.875rem center;
+      padding-right: 2.5rem;
+    }
+
+    /* ── Template row (select + Anpassen btn) ───────── */
+    .template-row {
+      display: flex;
+      gap: 0.5rem;
+      align-items: flex-end;
+    }
+    .template-row .field { flex: 1; margin: 0; }
+
+    .btn-anpassen {
+      flex-shrink: 0;
+      height: 40px;
+      padding: 0 0.875rem;
+      background: white;
+      color: #475569;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 0.8125rem;
+      font-family: inherit;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: all .18s;
+      white-space: nowrap;
+    }
+    .btn-anpassen:hover { border-color: #0070f2; color: #0070f2; background: #eff6ff; }
+    .btn-anpassen:disabled { opacity: .35; cursor: not-allowed; pointer-events: none; }
+    .btn-anpassen.active { border-color: #0070f2; color: #0070f2; background: #eff6ff; }
+
+    /* ── Edit panel ──────────────────────────────────── */
+    .edit-panel {
+      display: none;
+      flex-direction: column;
+      gap: 0.875rem;
+      background: #fafcff;
+      border: 1.5px solid #bfdbfe;
+      border-radius: 12px;
+      padding: 1.25rem;
+      box-shadow: 0 0 0 3px rgba(0,112,242,.05);
+      animation: previewIn .2s ease both;
+    }
+    .edit-panel.visible { display: flex; }
+
+    .edit-panel-title {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #0070f2;
+    }
+
+    .edit-panel textarea {
+      width: 100%;
+      min-height: 140px;
+      padding: 0.75rem 0.875rem;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 0.8125rem;
+      font-family: inherit;
+      color: #0f172a;
+      background: white;
+      outline: none;
+      resize: vertical;
+      line-height: 1.6;
+      transition: border-color .18s, box-shadow .18s;
+    }
+    .edit-panel textarea:focus {
+      border-color: #0070f2;
+      box-shadow: 0 0 0 3px rgba(0,112,242,.1);
+    }
+
+    .edit-panel-actions {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .btn-reset {
+      margin-left: auto;
+      padding: 0 0.75rem;
+      height: 32px;
+      background: white;
+      color: #94a3b8;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 7px;
+      font-size: 0.75rem;
+      font-family: inherit;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      transition: all .18s;
+    }
+    .btn-reset:hover { color: #ef4444; border-color: #fca5a5; background: #fff5f5; }
+
+    .custom-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.625rem;
+      font-weight: 700;
+      color: #0070f2;
+      background: #eff6ff;
+      padding: 0.15rem 0.5rem;
+      border-radius: 20px;
+      margin-left: 0.5rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    /* ── Email Preview ───────────────────────────────── */
+    @keyframes previewIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .preview-wrap { display: none; flex-direction: column; gap: 0.5rem; }
+    .preview-wrap.visible { display: flex; animation: previewIn .25s ease both; }
+
+    .preview-title {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #94a3b8;
+    }
+
+    .email-card {
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #fff;
+      box-shadow: 0 1px 4px rgba(0,0,0,.04);
+    }
+
+    .email-header {
+      background: #f8fafc;
+      border-bottom: 1px solid #f1f5f9;
+      padding: 0.875rem 1.125rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .email-meta-row { display: flex; align-items: baseline; gap: 0.5rem; font-size: 0.8125rem; }
+
+    .email-meta-label {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #94a3b8;
+      min-width: 52px;
+    }
+
+    .email-meta-value { color: #1e293b; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .email-meta-value.subject { font-weight: 600; color: #0f172a; }
+
+    .email-body {
+      padding: 1rem 1.125rem;
+      font-size: 0.8125rem;
+      color: #475569;
+      white-space: pre-wrap;
+      line-height: 1.65;
+      max-height: 160px;
+      overflow-y: auto;
+    }
+
+    .email-body::-webkit-scrollbar { width: 4px; }
+    .email-body::-webkit-scrollbar-track { background: transparent; }
+    .email-body::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px; }
+
+    /* ── Buttons ─────────────────────────────────────── */
+    .btn-row { display: flex; gap: 0.75rem; }
+
+    .btn-primary,
+    .btn-secondary {
+      flex: 1;
+      height: 42px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-family: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      transition: all .2s ease;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #0070f2 0%, #0055cc 100%);
+      color: white;
+      box-shadow: 0 2px 8px rgba(0,112,242,.32), 0 1px 2px rgba(0,0,0,.1);
+    }
+    .btn-primary:hover { background: linear-gradient(135deg, #0062d9 0%, #004ab8 100%); box-shadow: 0 4px 18px rgba(0,112,242,.42); transform: translateY(-1px); }
+    .btn-primary:active { transform: translateY(0); box-shadow: 0 2px 8px rgba(0,112,242,.3); }
+
+    .btn-secondary {
+      background: white;
+      color: #0070f2;
+      border: 1.5px solid #bfdbfe;
+      box-shadow: 0 1px 3px rgba(0,0,0,.05);
+    }
+    .btn-secondary:hover { background: #eff6ff; border-color: #0070f2; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,112,242,.12); }
+    .btn-secondary:active { transform: translateY(0); }
+    .btn-secondary.copied { color: #16a34a; border-color: #86efac; background: #f0fdf4; }
+
+    /* ── Info hint ───────────────────────────────────── */
+    .info-hint {
+      display: flex;
+      gap: 0.75rem;
+      background: #f0f9ff;
+      border: 1px solid #bae6fd;
+      border-left: 3px solid #0070f2;
+      border-radius: 0 8px 8px 0;
+      padding: 0.75rem 1rem;
+    }
+
+    .info-hint-icon { color: #0070f2; flex-shrink: 0; margin-top: 1px; }
+
+    .info-hint-text { font-size: 0.75rem; color: #475569; line-height: 1.6; }
+    .info-hint-text strong { color: #1e293b; display: block; margin-bottom: 0.25rem; font-weight: 600; }
+
+    /* ── Footer ──────────────────────────────────────── */
+    .card-footer {
+      padding: 1rem 2rem;
+      border-top: 1px solid #f1f5f9;
+      background: #f8fafc;
+      font-size: 0.75rem;
+      color: #94a3b8;
+      text-align: center;
+      letter-spacing: 0.01em;
+    }
+</style>
+</head>
+<body>
+
+  <!-- Shell Bar -->
+  <header class="shellbar">
+    <svg width="44" height="20" viewBox="0 0 44 20" xmlns="http://www.w3.org/2000/svg" aria-label="SAP" class="shellbar-logo">
+      <rect width="44" height="20" rx="3" fill="white"/>
+      <text x="4" y="15" font-family="Arial Black, Arial, sans-serif" font-size="13" font-weight="900" fill="#0070f2">SAP</text>
+    </svg>
+    <div class="shellbar-separator"></div>
+    <span class="shellbar-title">L1 Support Quick Tool</span>
+    <span class="shellbar-badge">IT Operations</span>
+  </header>
+
+  <div class="app-layout">
+
+    <!-- Sidebar -->
+    <nav class="sidebar">
+      <div class="sidebar-section-title">Navigation</div>
+      <button class="nav-item active" id="nav-vorlagen" onclick="showPage('vorlagen')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5h-2z"/>
+        </svg>
+        Vorlagen
+      </button>
+      <button class="nav-item" id="nav-kontakte" onclick="showPage('kontakte')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M15 14s1 0 1-1-1-4-5-4-5 3-5 4 1 1 1 1h8zm-7.978-1A.261.261 0 0 1 7 12.996c.001-.264.167-1.03.76-1.72C8.312 10.629 9.282 10 11 10c1.717 0 2.687.63 3.24 1.276.593.69.758 1.457.76 1.72l-.008.002-.014.002H7.022zM11 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm3-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM6.936 9.28a5.88 5.88 0 0 0-1.23-.247A7.35 7.35 0 0 0 5 9c-4 0-5 3-5 4 0 .667.333 1 1 1h4.216A2.238 2.238 0 0 1 5 13c0-1.01.377-2.042 1.09-2.904.243-.294.526-.569.846-.816zM4.92 10A5.493 5.493 0 0 0 4 13H1c0-.26.164-1.03.76-1.724.545-.636 1.492-1.256 3.16-1.275zM1.5 5.5a3 3 0 1 1 6 0 3 3 0 0 1-6 0zm3-2a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/>
+        </svg>
+        Spezielle Kontakte
+      </button>
+    </nav>
+
+    <!-- Main content -->
+    <main class="main-content">
+
+      <!-- Page: Vorlagen -->
+      <div id="page-vorlagen" class="page active">
+        <div class="card">
+
+          <div class="card-accent"></div>
+
+          <div class="card-header">
+            <h1>Neue Nachricht erstellen</h1>
+            <p>Empfänger eingeben, Template wählen und direkt in Outlook öffnen.</p>
+          </div>
+
+          <div class="card-body">
+
+            <div class="section-label">Empfänger</div>
+
+            <div class="field" id="field-email">
+              <label for="email">E-Mail-Adresse <span class="req">*</span></label>
+              <input type="email" id="email" placeholder="vorname.nachname@domain.com" autocomplete="email" oninput="clearError('field-email'); updatePreview()" />
+              <span class="error-msg">Bitte eine gültige E-Mail-Adresse eingeben.</span>
+            </div>
+
+            <div class="section-label">Inhalt</div>
+
+            <div class="template-row">
+              <div class="field" id="field-template">
+                <label for="template">
+                  Template <span class="req">*</span>
+                  <span class="custom-badge" id="custom-badge" style="display:none">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 16 16" fill="currentColor"><path d="M12.854.146a.5.5 0 0 0-.707 0L10.5 1.793 14.207 5.5l1.647-1.646a.5.5 0 0 0 0-.708l-3-3zm.646 6.061L9.793 2.5 3.293 9H3.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.207l6.5-6.5zm-7.468 7.468A.5.5 0 0 1 6 13.5V13h-.5a.5.5 0 0 1-.5-.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.5-.5V10h-.5a.499.499 0 0 1-.175-.032l-.179.178a.5.5 0 0 0-.11.168l-2 5a.5.5 0 0 0 .65.65l5-2a.5.5 0 0 0 .168-.11l.178-.178z"/></svg>
+                    Angepasst
+                  </span>
+                </label>
+                <select id="template" onchange="onTemplateChange()">
+                  <option value="" disabled selected>Template auswählen …</option>
+                  <option value="ios">iOS Update</option>
+                  <option value="ios-ipad">iOS &amp; iPad Update</option>
+                  <option value="ipados">iPadOS Update</option>
+                  <option value="macos">macOS Update</option>
+                  <option value="windows">Windows Update</option>
+                  <option value="password-change">Password Change</option>
+                </select>
+                <span class="error-msg">Bitte ein Template auswählen.</span>
+              </div>
+              <button class="btn-anpassen" id="btn-anpassen" onclick="toggleEditPanel()" disabled>
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M12.854.146a.5.5 0 0 0-.707 0L10.5 1.793 14.207 5.5l1.647-1.646a.5.5 0 0 0 0-.708l-3-3zm.646 6.061L9.793 2.5 3.293 9H3.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.207l6.5-6.5zm-7.468 7.468A.5.5 0 0 1 6 13.5V13h-.5a.5.5 0 0 1-.5-.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.5-.5V10h-.5a.499.499 0 0 1-.175-.032l-.179.178a.5.5 0 0 0-.11.168l-2 5a.5.5 0 0 0 .65.65l5-2a.5.5 0 0 0 .168-.11l.178-.178z"/></svg>
+                Anpassen
+              </button>
+            </div>
+
+            <!-- Inline template editor -->
+            <div class="edit-panel" id="edit-panel">
+              <div class="edit-panel-title">Template bearbeiten</div>
+              <div class="field">
+                <label for="edit-subject">Betreff</label>
+                <input type="text" id="edit-subject" oninput="updatePreview()" />
+              </div>
+              <div class="field">
+                <label for="edit-body">Mailtext</label>
+                <textarea id="edit-body" oninput="updatePreview()"></textarea>
+              </div>
+              <div class="edit-panel-actions">
+                <button class="btn-save" onclick="saveEditedTemplate()" style="height:32px;font-size:0.8125rem;">Speichern</button>
+                <button class="btn-cancel-form" onclick="toggleEditPanel()" style="height:32px;font-size:0.8125rem;">Schließen</button>
+                <button class="btn-reset" id="btn-reset" onclick="resetTemplate()">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg>
+                  Original
+                </button>
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div class="field" id="field-version">
+                <label for="version">Version</label>
+                <input type="text" id="version" placeholder="z.B. 18.4" oninput="updatePreview()" />
+              </div>
+              <div class="field" id="field-datum">
+                <label for="datum">Datum</label>
+                <input type="text" id="datum" placeholder="z.B. 31.07.2026" oninput="updatePreview()" />
+              </div>
+            </div>
+
+            <div class="preview-wrap" id="preview">
+              <div class="preview-title">Vorschau</div>
+              <div class="email-card">
+                <div class="email-header">
+                  <div class="email-meta-row">
+                    <span class="email-meta-label">An</span>
+                    <span class="email-meta-value" id="preview-to">—</span>
+                  </div>
+                  <div class="email-meta-row">
+                    <span class="email-meta-label">Betreff</span>
+                    <span class="email-meta-value subject" id="preview-subject">—</span>
+                  </div>
+                </div>
+                <div class="email-body" id="preview-body"></div>
+              </div>
+            </div>
+
+            <div class="btn-row">
+              <button class="btn-primary" onclick="openInOutlook()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 16 16" fill="white">
+                  <path d="M2 3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3zm1.5 2.5v7h9v-7l-4.5 3-4.5-3zm0-1.5 4.5 3 4.5-3H3.5z"/>
+                </svg>
+                In Outlook öffnen
+              </button>
+              <button class="btn-secondary" id="btn-copy" onclick="copyTemplate()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V2zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H6zM2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1H2z"/>
+                </svg>
+                Text kopieren
+              </button>
+            </div>
+
+            <div class="info-hint">
+              <svg class="info-hint-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+              </svg>
+              <div class="info-hint-text">
+                <strong>Öffnet sich Apple Mail statt Outlook?</strong>
+                <em>macOS Ventura+:</em> Systemeinstellungen → Allgemein → Standard-Apps → E-Mail → Microsoft Outlook<br>
+                <em>macOS Monterey:</em> Mail-App → Menü Mail → Einstellungen → Allgemein → Standard-E-Mail-Programm
+              </div>
+            </div>
+
+          </div>
+
+          <div class="card-footer">
+            „In Outlook öffnen" startet Outlook mit vorausgefüllter Mail &nbsp;·&nbsp; „Text kopieren" kopiert Betreff &amp; Text in die Zwischenablage
+          </div>
+
+        </div>
+      </div><!-- /page-vorlagen -->
+
+      <!-- Page: Spezielle Kontakte -->
+      <div id="page-kontakte" class="page">
+
+        <div class="page-header">
+          <div class="page-title">Spezielle Kontakte</div>
+          <button class="btn-add" onclick="toggleAddForm()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+            </svg>
+            Kontakt hinzufügen
+          </button>
+        </div>
+
+        <div class="add-form" id="add-form">
+          <div class="add-form-title">Neuen Kontakt anlegen</div>
+          <div class="add-form-row">
+            <div class="field">
+              <label for="new-name">Name</label>
+              <input type="text" id="new-name" placeholder="Vor- und Nachname" />
+            </div>
+            <div class="field">
+              <label for="new-gebiet">Gebiet</label>
+              <input type="text" id="new-gebiet" placeholder="z.B. München" />
+            </div>
+          </div>
+          <div class="add-form-actions">
+            <button class="btn-cancel-form" onclick="toggleAddForm()">Abbrechen</button>
+            <button class="btn-save" onclick="saveContact()">Speichern</button>
+          </div>
+        </div>
+
+        <div class="contacts-list" id="contacts-list"></div>
+
+      </div><!-- /page-kontakte -->
+
+    </main>
+  </div><!-- /app-layout -->
+
+  <script>
+    // ── Templates ──────────────────────────────────────────────────────────────
+    const TEMPLATES = {
+      ios: {
+        subject: "[L1 Support] iOS [Version] Update erforderlich – Bitte bis [Datum] aktualisieren",
+        body:
+`Hallo [Name],
+
+für das iPhone wurde das iOS [Version] als Mindestanforderung festgelegt und das Update muss bis zum [Datum] installiert werden.
+
+Führe die Aktualisierung bitte vor diesem Zeitpunkt auf deinem iPhone durch, damit es zu keinen Problemen kommt und dir der geschäftliche Zugriff erhalten bleibt.
+
+Sollten die Updates nicht bis zu dem oben genannten Tag installiert worden sein, wird das Gerät als nicht mehr compliant gelistet und erhält somit keinen Zugriff mehr auf geschäftliche Applikationen oder Inhalte.
+
+Bei Fragen oder Unterstützung kannst du dich gerne bei mir melden.`
+      },
+
+      "ios-ipad": {
+        subject: "[L1 Support] iOS & iPadOS [Version] Update erforderlich – Bitte bis [Datum] aktualisieren",
+        body:
+`Hallo [Name],
+
+für das iPhone und iPad wurde das iOS/iPad OS [Version] als Mindestanforderung festgelegt und das Update muss bis zum [Datum] installiert werden.
+
+Führe die Aktualisierung bitte vor diesem Zeitpunkt auf deinen Geräten durch, damit es zu keinen Problemen kommt und dir der geschäftliche Zugriff erhalten bleibt.
+
+Sollten die Updates nicht bis zu dem oben genannten Tag installiert worden sein, wird das jeweilige Gerät als nicht mehr compliant gelistet und erhält somit keinen Zugriff mehr auf geschäftliche Applikationen oder Inhalte.
+
+Bei Fragen oder Unterstützung kannst du dich gerne bei mir melden.`
+      },
+
+      ipados: {
+        subject: "[L1 Support] iPadOS [Version] Update erforderlich – Bitte bis [Datum] aktualisieren",
+        body:
+`Hallo [Name],
+
+für das iPad wurde das iPadOS [Version] als Mindestanforderung festgelegt und das Update muss bis zum [Datum] installiert werden.
+
+Führe die Aktualisierung bitte vor diesem Zeitpunkt auf deinem iPad durch, damit es zu keinen Problemen kommt und dir der geschäftliche Zugriff erhalten bleibt.
+
+Sollten die Updates nicht bis zu dem oben genannten Tag installiert worden sein, wird das Gerät als nicht mehr compliant gelistet und erhält somit keinen Zugriff mehr auf geschäftliche Applikationen oder Inhalte.
+
+Bei Fragen oder Unterstützung kannst du dich gerne bei mir melden.`
+      },
+
+      macos: {
+        subject: "[L1 Support] macOS [Version] Update erforderlich – Bitte bis [Datum] aktualisieren",
+        body:
+`Hallo [Name],
+
+für deinen Mac wurde macOS [Version] als Mindestanforderung festgelegt und das Update muss bis zum [Datum] installiert werden.
+
+Führe die Aktualisierung bitte vor diesem Zeitpunkt durch, damit es zu keinen Problemen kommt und dir der geschäftliche Zugriff erhalten bleibt.
+
+Sollten die Updates nicht bis zu dem oben genannten Tag installiert worden sein, wird das Gerät als nicht mehr compliant gelistet und erhält somit keinen Zugriff mehr auf geschäftliche Applikationen oder Inhalte.
+
+Bei Fragen oder Unterstützung kannst du dich gerne bei mir melden.`
+      },
+
+      "password-change": {
+        subject: "[L1 Support] Kennwort läuft ab – Bitte bis [Datum] ändern",
+        body:
+`Hallo [Name],
+
+ich wollte dich kurz darauf hinweisen, dass dein globales Kennwort am [Datum] ablaufen wird.
+Damit es zu keinen Schwierigkeiten oder Verzögerungen kommt, führe bitte rechtzeitig einen Wechsel deines Kennworts durch.
+
+Bei Fragen stehe ich dir gerne zur Verfügung.`
+      },
+
+      windows: {
+        subject: "[L1 Support] Windows [Version] Update erforderlich – Bitte bis [Datum] aktualisieren",
+        body:
+`Hallo [Name],
+
+für dein Laptop wurde das Windows Update [Version] als Mindestanforderung festgelegt und das Update muss bis zum [Datum] installiert werden.
+
+Führe die Aktualisierung bitte vor diesem Zeitpunkt durch, damit es zu keinen Problemen kommt und dir der geschäftliche Zugriff erhalten bleibt.
+
+Sollten die Updates nicht bis zu dem oben genannten Tag installiert worden sein, wird das Gerät als nicht mehr compliant gelistet und erhält somit keinen Zugriff mehr auf geschäftliche Applikationen oder Inhalte.
+
+Bei Fragen oder Unterstützung kannst du dich gerne bei mir melden.`
+      }
+    };
+
+    // ── Custom template storage ────────────────────────────────────────────────
+    function loadCustomTemplates() {
+      return JSON.parse(localStorage.getItem("l1-custom-templates") || "{}");
+    }
+
+    function getTemplate(key) {
+      const custom = loadCustomTemplates();
+      return custom[key] ? { ...TEMPLATES[key], ...custom[key] } : TEMPLATES[key];
+    }
+
+    function isCustomized(key) {
+      return !!loadCustomTemplates()[key];
+    }
+
+    function toggleEditPanel() {
+      const panel = document.getElementById("edit-panel");
+      const btn   = document.getElementById("btn-anpassen");
+      const key   = document.getElementById("template").value;
+      if (!key) return;
+
+      const opening = !panel.classList.contains("visible");
+      panel.classList.toggle("visible", opening);
+      btn.classList.toggle("active", opening);
+
+      if (opening) {
+        const tmpl = getTemplate(key);
+        document.getElementById("edit-subject").value = tmpl.subject;
+        document.getElementById("edit-body").value    = tmpl.body;
+        document.getElementById("btn-reset").style.display = isCustomized(key) ? "flex" : "none";
+      }
+    }
+
+    function saveEditedTemplate() {
+      const key     = document.getElementById("template").value;
+      const subject = document.getElementById("edit-subject").value.trim();
+      const body    = document.getElementById("edit-body").value;
+      if (!key || !subject) return;
+
+      const custom = loadCustomTemplates();
+      custom[key] = { subject, body };
+      localStorage.setItem("l1-custom-templates", JSON.stringify(custom));
+
+      document.getElementById("btn-reset").style.display = "flex";
+      updateCustomBadge(key);
+      updatePreview();
+    }
+
+    function resetTemplate() {
+      const key    = document.getElementById("template").value;
+      const custom = loadCustomTemplates();
+      delete custom[key];
+      localStorage.setItem("l1-custom-templates", JSON.stringify(custom));
+
+      const tmpl = TEMPLATES[key];
+      document.getElementById("edit-subject").value = tmpl.subject;
+      document.getElementById("edit-body").value    = tmpl.body;
+      document.getElementById("btn-reset").style.display = "none";
+      updateCustomBadge(key);
+      updatePreview();
+    }
+
+    function updateCustomBadge(key) {
+      document.getElementById("custom-badge").style.display = isCustomized(key) ? "inline-flex" : "none";
+    }
+
+    // ── Page navigation ────────────────────────────────────────────────────────
+    function showPage(id) {
+      document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+      document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+      document.getElementById("page-" + id).classList.add("active");
+      document.getElementById("nav-" + id).classList.add("active");
+      if (id === "kontakte") renderContacts();
+    }
+
+    // ── Contacts (localStorage) ────────────────────────────────────────────────
+    function loadContacts() {
+      return JSON.parse(localStorage.getItem("l1-contacts") || "[]");
+    }
+
+    function saveContactsToStorage(contacts) {
+      localStorage.setItem("l1-contacts", JSON.stringify(contacts));
+    }
+
+    function toggleAddForm() {
+      const form = document.getElementById("add-form");
+      const visible = form.classList.toggle("visible");
+      if (visible) {
+        document.getElementById("new-name").focus();
+      } else {
+        document.getElementById("new-name").value = "";
+        document.getElementById("new-gebiet").value = "";
+      }
+    }
+
+    function saveContact() {
+      const name   = document.getElementById("new-name").value.trim();
+      const gebiet = document.getElementById("new-gebiet").value.trim();
+      if (!name) { document.getElementById("new-name").focus(); return; }
+
+      const contacts = loadContacts();
+      contacts.push({ id: Date.now(), name, gebiet });
+      saveContactsToStorage(contacts);
+      toggleAddForm();
+      renderContacts();
+    }
+
+    function deleteContact(id) {
+      const contacts = loadContacts().filter(c => c.id !== id);
+      saveContactsToStorage(contacts);
+      renderContacts();
+    }
+
+    function renderContacts() {
+      const list     = document.getElementById("contacts-list");
+      const contacts = loadContacts();
+
+      if (contacts.length === 0) {
+        list.innerHTML = `
+          <div class="contacts-empty">
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 16 16" fill="#9aa5b1">
+              <path d="M15 14s1 0 1-1-1-4-5-4-5 3-5 4 1 1 1 1h8zm-7.978-1A.261.261 0 0 1 7 12.996c.001-.264.167-1.03.76-1.72C8.312 10.629 9.282 10 11 10c1.717 0 2.687.63 3.24 1.276.593.69.758 1.457.76 1.72l-.008.002-.014.002H7.022zM11 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm3-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM6.936 9.28a5.88 5.88 0 0 0-1.23-.247A7.35 7.35 0 0 0 5 9c-4 0-5 3-5 4 0 .667.333 1 1 1h4.216A2.238 2.238 0 0 1 5 13c0-1.01.377-2.042 1.09-2.904.243-.294.526-.569.846-.816zM4.92 10A5.493 5.493 0 0 0 4 13H1c0-.26.164-1.03.76-1.724.545-.636 1.492-1.256 3.16-1.275zM1.5 5.5a3 3 0 1 1 6 0 3 3 0 0 1-6 0zm3-2a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/>
+            </svg>
+            <p>Noch keine Kontakte gespeichert.</p>
+          </div>`;
+        return;
+      }
+
+      list.innerHTML = contacts.map(c => `
+        <div class="contact-item">
+          <div class="contact-info">
+            <div class="contact-name">${escapeHtml(c.name)}</div>
+            ${c.gebiet ? `<div class="contact-gebiet"><span class="contact-tag">${escapeHtml(c.gebiet)}</span></div>` : ""}
+          </div>
+          <button class="btn-delete" onclick="deleteContact(${c.id})" title="Kontakt löschen">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+              <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+            </svg>
+          </button>
+        </div>`).join("");
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+    }
+
+    document.addEventListener("keydown", e => {
+      if (e.key === "Enter" && document.getElementById("add-form").classList.contains("visible")) {
+        saveContact();
+      }
+    });
+
+    // ── Placeholder replacement ────────────────────────────────────────────────
+    function getFilled(text) {
+      const version = document.getElementById("version").value.trim();
+      const datum   = document.getElementById("datum").value.trim();
+      return text
+        .replace(/\[Version\]/g, version || "[Version]")
+        .replace(/\[Datum\]/g,   datum   || "[Datum]");
+    }
+
+    // ── Preview ────────────────────────────────────────────────────────────────
+    function onTemplateChange() {
+      clearError("field-template");
+      const key = document.getElementById("template").value;
+      // Enable Anpassen button and close any open panel
+      document.getElementById("btn-anpassen").disabled = !key;
+      const panel = document.getElementById("edit-panel");
+      panel.classList.remove("visible");
+      document.getElementById("btn-anpassen").classList.remove("active");
+      updateCustomBadge(key);
+      updatePreview();
+    }
+
+    function updatePreview() {
+      const key   = document.getElementById("template").value;
+      const email = document.getElementById("email").value.trim();
+      // Use live edit values if panel is open, otherwise stored template
+      const panelOpen = document.getElementById("edit-panel").classList.contains("visible");
+      let tmpl;
+      if (panelOpen && key) {
+        tmpl = {
+          subject: document.getElementById("edit-subject").value,
+          body:    document.getElementById("edit-body").value
+        };
+      } else {
+        tmpl = key ? getTemplate(key) : null;
+      }
+      if (!tmpl) return;
+
+      document.getElementById("preview-to").textContent      = email || "—";
+      document.getElementById("preview-subject").textContent  = getFilled(tmpl.subject);
+      document.getElementById("preview-body").textContent     = getFilled(tmpl.body);
+      document.getElementById("preview").classList.add("visible");
+    }
+
+    // ── Validation ─────────────────────────────────────────────────────────────
+    function validateEmail(value) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+    }
+
+    function clearError(fieldId) {
+      document.getElementById(fieldId).classList.remove("has-error");
+    }
+
+    // ── Copy to clipboard ──────────────────────────────────────────────────────
+    function copyTemplate() {
+      const templateEl = document.getElementById("template");
+
+      if (!templateEl.value) {
+        document.getElementById("field-template").classList.add("has-error");
+        return;
+      }
+
+      const tmpl = getTemplate(templateEl.value);
+      const text = "Betreff: " + getFilled(tmpl.subject) + "\n\n" + getFilled(tmpl.body);
+
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById("btn-copy");
+        btn.classList.add("copied");
+        btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/></svg> Kopiert`;
+        setTimeout(() => {
+          btn.classList.remove("copied");
+          btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V2zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H6zM2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1H2z"/></svg> Text kopieren`;
+        }, 2000);
+      });
+    }
+
+    // ── Open in Outlook ────────────────────────────────────────────────────────
+    function openInOutlook() {
+      const emailEl    = document.getElementById("email");
+      const templateEl = document.getElementById("template");
+
+      let valid = true;
+
+      if (!validateEmail(emailEl.value.trim())) {
+        document.getElementById("field-email").classList.add("has-error");
+        valid = false;
+      }
+
+      if (!templateEl.value) {
+        document.getElementById("field-template").classList.add("has-error");
+        valid = false;
+      }
+
+      if (!valid) return;
+
+      const tmpl = getTemplate(templateEl.value);
+      const mailto =
+        "mailto:" +
+        encodeURIComponent(emailEl.value.trim()) +
+        "?subject=" + encodeURIComponent(getFilled(tmpl.subject)) +
+        "&body="    + encodeURIComponent(getFilled(tmpl.body));
+
+      window.location.href = mailto;
+    }
+  </script>
+
+</body>
+</html>
